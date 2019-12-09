@@ -105,12 +105,15 @@ class Chat extends Component {
   }
 
   setLocalStream(stream) {
+    console.log('setLocalStream(stream)');
+    console.log(stream);
     const video = document.getElementById('selfview');
     if ('srcObject' in video) {
       video.srcObject = stream;
     } else {
       video.src = URL.createObjectURL(stream);
     }
+    // video.id = stream.id;
     video.onloadedmetadata = error => {
       video.play();
     };
@@ -195,27 +198,37 @@ class Chat extends Component {
 
   onTrack(event) {
     console.log('ontrack');
-    if (event.track.kind === 'audio') return;
-
-    let videoContener = document.getElementById('remoteview');
-    let _video = document.createElement('video');
-
-    if ('srcObject' in _video) {
-      _video.srcObject = event.streams[0];
+    console.log(event);
+    let videoContainer = document.getElementById('remoteview');
+    if (!document.getElementById(event.streams[0].id)) {
+      let _div = document.createElement('div');
+      _div.id = event.streams[0].id;
+      videoContainer.appendChild(_div);
+    }
+    let streamContainer = document.getElementById(event.streams[0].id);
+    if (event.track.kind === 'video') {
+      let _video = document.createElement('video');
+      if ('srcObject' in _video) {
+        _video.srcObject = event.streams[0];
+      } else {
+        _video.src = URL.createObjectURL(event.streams[0]);
+      }
+      _video.autoplay = true;
+      _video.style.height = '240px';
+      _video.style.width = '320px';
+      _video.id = event.track.id;
+      _video.onloadedmetadata = error => {
+        _video.play();
+      };
+      streamContainer.appendChild(_video);
     } else {
-      _video.src = URL.createObjectURL(event.streams[0]);
+      let _audio = document.createElement('audio');
+      _audio.id = event.track.id;
+
+      streamContainer.appendChild(_audio);
     }
     
-    _video.autoplay = true;
-    _video.style.height = '240px';
-    _video.style.width = '320px';
-
-    _video.onloadedmetadata = error => {
-      _video.play();
-    };
-
-    videoContener.appendChild(_video);
-    return _video;
+    return 'x';
   }
 
   onNegotiationNeeded(event) {
@@ -230,7 +243,11 @@ class Chat extends Component {
 
   onIceConnectionStateChange(event) {
     console.log('onIceConnectionStateChange(event)');
-    console.log(event);
+    if (this.webRTCConnection.iceConnectionState === "failed" ||
+        this.webRTCConnection.iceConnectionState === "disconnected" ||
+        this.webRTCConnection.iceConnectionState === "closed") {
+        console.log(event.target);
+    }
   }
 
   onIceGatheringStateChange(event) {
