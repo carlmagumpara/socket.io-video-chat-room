@@ -88,8 +88,7 @@ class Chat extends Component {
     const { match: { params } } = this.props;
 
     if (hasUserMedia()) {
-       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia
-          || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
         navigator.getUserMedia({ 
           video: true, 
           audio: true 
@@ -198,8 +197,7 @@ class Chat extends Component {
     const { match: { params } } = this.props;
 
     if (hasUserMedia()) {
-       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia
-          || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
         navigator.getUserMedia({ 
           video: true, 
           audio: true 
