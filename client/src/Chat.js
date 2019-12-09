@@ -266,7 +266,7 @@ class Chat extends Component {
   }
 
   sendMessage(event) {
-    const { match: { params: } } = this.props;
+    const { match: { params } } = this.props;
     const { name, message } = this.state;
 
     if (!message) return;
