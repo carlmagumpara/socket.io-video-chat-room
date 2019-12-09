@@ -1,6 +1,7 @@
 import React, { 
   Component 
 } from 'react';
+import 'webrtc-adapter'
 import io from 'socket.io-client';
 import {
   hasUserMedia
@@ -132,6 +133,8 @@ class Chat extends Component {
               _video.src = URL.createObjectURL(event.stream);
             }
             _video.onloadedmetadata = error => {
+              console.log('onloadedmetadata');
+              console.log(error);
               _video.play();
             };
 
@@ -146,6 +149,7 @@ class Chat extends Component {
 
           this.createOffer();
        }, error => {
+          console.log(error);
           alert('Error. WebRTC is not supported!'); 
        });
     } else {
@@ -239,6 +243,8 @@ class Chat extends Component {
               _video.src = URL.createObjectURL(event.stream);
             }
             _video.onloadedmetadata = error => {
+              console.log('onloadedmetadata');
+              console.log(error);
               _video.play();
             };
 
@@ -253,6 +259,7 @@ class Chat extends Component {
 
           this.createAnswer(offer);
        }, error => {
+          console.log(error);
           alert('Error. WebRTC is not supported!'); 
        });
     } else {
