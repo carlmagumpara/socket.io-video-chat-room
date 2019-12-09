@@ -275,8 +275,8 @@ class Chat extends Component {
 
     this.socket.emit('message', {
       room: params.room,
-      name
-      message,
+      name,
+      message
     });
 
     this.setState({
