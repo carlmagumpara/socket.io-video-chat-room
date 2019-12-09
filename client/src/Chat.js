@@ -18,12 +18,10 @@ class Chat extends Component {
     }
 
     this.socket = null;
+    this.webRTCConnection = null;
   }
 
   componentDidMount() {
-    this.setState({
-      name: Math.random().toString(36).substring(7)
-    });
     this.setSocketEvents();
   }
 
@@ -268,14 +266,19 @@ class Chat extends Component {
   }
 
   sendMessage(event) {
-    const { match: { params } } = this.props;
+    const { match: { params: } } = this.props;
+    const { name, message } = this.state;
+
+    if (!message) return;
 
     event.preventDefault();
 
     this.socket.emit('message', {
       room: params.room,
-      message: this.state.message
+      name
+      message,
     });
+
     this.setState({
       message: ''
     });
