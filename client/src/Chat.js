@@ -205,30 +205,42 @@ class Chat extends Component {
     } else {
       _video.src = URL.createObjectURL(event.streams[0]);
     }
+    
+    _video.autoplay = true;
+    _video.style.height = '240px';
+    _video.style.width = '320px';
+
     _video.onloadedmetadata = error => {
       _video.play();
     };
-
-    _video.setAttribute('width', '320');
-    _video.setAttribute('height', '240');
 
     videoContener.appendChild(_video);
     return _video;
   }
 
   onNegotiationNeeded(event) {
+    console.log('onNegotiationNeeded(event)');
+    console.log(event);
   }
 
   onRemoveTrack(event) {
+    console.log('onRemoveTrack(event)');
+    console.log(event);
   }
 
   onIceConnectionStateChange(event) {
+    console.log('onIceConnectionStateChange(event)');
+    console.log(event);
   }
 
   onIceGatheringStateChange(event) {
+    console.log('onIceGatheringStateChange(event)');
+    console.log(event);
   }
 
   onSignalingStateChange(event) {
+    console.log('onSignalingStateChange(event)');
+    console.log(event);
   }
 
   onOffer(offer) {
