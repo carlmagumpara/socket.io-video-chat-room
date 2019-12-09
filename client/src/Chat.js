@@ -6,8 +6,6 @@ import {
   hasUserMedia
 } from './Utils'
 
-const queryString = require('query-string');
-
 class Chat extends Component {
 
   constructor (props) {
@@ -88,8 +86,7 @@ class Chat extends Component {
   }
 
   setUpWebRTC() {
-    const { match: { params }, location } = this.props;
-    const parsed = queryString.parse(location.search);
+    const { match: { params } } = this.props;
 
     if (hasUserMedia()) {
        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia
@@ -138,6 +135,9 @@ class Chat extends Component {
               _video.play();
             };
 
+            _video.setAttribute('width', '320');
+            _video.setAttribute('height', '240');
+
             videoContener.appendChild(_video);
             return _video;
           };
@@ -154,8 +154,7 @@ class Chat extends Component {
   }
 
   createOffer() {
-    const { match: { params }, location } = this.props;
-    const parsed = queryString.parse(location.search);
+    const { match: { params } } = this.props;
   
     // Create an Offer
     this.webRTCConnection.createOffer(offer => { 
@@ -170,8 +169,7 @@ class Chat extends Component {
   }
 
   createAnswer(offer) {
-    const { match: { params }, location } = this.props;
-    const parsed = queryString.parse(location.search);
+    const { match: { params } } = this.props;
   
     // Create an Answer
     this.webRTCConnection.setRemoteDescription(new RTCSessionDescription(offer));
@@ -195,8 +193,7 @@ class Chat extends Component {
   }
 
   onOffer(offer) {
-    const { match: { params }, location } = this.props;
-    const parsed = queryString.parse(location.search);
+    const { match: { params } } = this.props;
 
     if (hasUserMedia()) {
        navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia
@@ -244,6 +241,9 @@ class Chat extends Component {
             _video.onloadedmetadata = error => {
               _video.play();
             };
+
+            _video.setAttribute('width', '320');
+            _video.setAttribute('height', '240');
 
             videoContener.appendChild(_video);
             return _video;
@@ -301,7 +301,8 @@ class Chat extends Component {
         <video 
           id="selfview" 
           style={{
-            width: 300
+            width: 320,
+            height: 240
           }}
           autoPlay>
         </video>
