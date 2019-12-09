@@ -85,65 +85,15 @@ class Chat extends Component {
   }
 
   setUpWebRTC() {
-    const { match: { params } } = this.props;
-
     if (hasUserMedia()) {
         navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
         navigator.getUserMedia({ 
           video: true, 
           audio: true 
         }, stream => {
-          const video = document.getElementById('selfview');
-          if ('srcObject' in video) {
-            video.srcObject = stream;
-          } else {
-            video.src = URL.createObjectURL(stream);
-          }
-          video.onloadedmetadata = error => {
-            video.play();
-          };
-
-          this.webRTCConnection = new RTCPeerConnection({ 
-            iceServers: [{ 
-              url: 'stun:stun.1.google.com:19302' 
-            }]
-          });
-
-          this.webRTCConnection.onicecandidate = event => {
-            console.log('onicecandidate');
-            if (event.candidate) {
-              this.socket.emit('candidate', {
-                room: params.room,
-                candidate: event.candidate
-              });
-            }
-          };
-
-          this.webRTCConnection.onaddstream = event => {
-            console.log('onaddstream');
-
-            let videoContener = document.getElementById('remoteview');
-            let _video = document.createElement('video');
-            if ('srcObject' in _video) {
-              _video.srcObject = event.stream;
-            } else {
-              _video.src = URL.createObjectURL(event.stream);
-            }
-            _video.onloadedmetadata = error => {
-              console.log('onloadedmetadata');
-              console.log(error);
-              _video.play();
-            };
-
-            _video.setAttribute('width', '320');
-            _video.setAttribute('height', '240');
-
-            videoContener.appendChild(_video);
-            return _video;
-          };
-
-          this.webRTCConnection.addStream(stream);
-
+          this.setLocalStream(stream);
+          this.connection();
+          this.addTracks(stream);
           this.createOffer();
        }, error => {
           console.log(error);
@@ -152,6 +102,38 @@ class Chat extends Component {
     } else {
       alert('Error. WebRTC is not supported!'); 
     }
+  }
+
+  setLocalStream(stream) {
+    const video = document.getElementById('selfview');
+    if ('srcObject' in video) {
+      video.srcObject = stream;
+    } else {
+      video.src = URL.createObjectURL(stream);
+    }
+    video.onloadedmetadata = error => {
+      video.play();
+    };
+
+    return video;
+  }
+
+  connection() {
+    console.log('connection()');
+
+    this.webRTCConnection = new RTCPeerConnection({
+      iceServers: [{ 
+        urls: 'stun:stun.1.google.com:19302' 
+      }]
+    });
+
+    this.webRTCConnection.onicecandidate = event => this.onIceCandidate(event);
+    this.webRTCConnection.ontrack = event => this.onTrack(event);
+    this.webRTCConnection.onnegotiationneeded = event => this.onNegotiationNeeded(event);
+    this.webRTCConnection.onremovetrack = event => this.onRemoveTrack(event);
+    this.webRTCConnection.oniceconnectionstatechange = event => this.onIceConnectionStateChange(event);
+    this.webRTCConnection.onicegatheringstatechange = event => this.onIceGatheringStateChange(event);
+    this.webRTCConnection.onsignalingstatechange = event => this.onSignalingStateChange(event);
   }
 
   createOffer() {
@@ -193,66 +175,72 @@ class Chat extends Component {
     this.webRTCConnection.addIceCandidate(new RTCIceCandidate(candidate));
   }
 
-  onOffer(offer) {
+  onIceCandidate(event) {
     const { match: { params } } = this.props;
 
+    console.log('onicecandidate');
+    if (event.candidate) {
+      this.socket.emit('candidate', {
+        room: params.room,
+        candidate: event.candidate
+      });
+    }
+  }
+
+  addTracks(stream) {
+    stream.getTracks().forEach(track => {
+      this.webRTCConnection.addTrack(track, stream);
+    });
+  }
+
+  onTrack(event) {
+    console.log('ontrack');
+    if (event.track.kind === 'audio') return;
+
+    let videoContener = document.getElementById('remoteview');
+    let _video = document.createElement('video');
+
+    if ('srcObject' in _video) {
+      _video.srcObject = event.streams[0];
+    } else {
+      _video.src = URL.createObjectURL(event.streams[0]);
+    }
+    _video.onloadedmetadata = error => {
+      _video.play();
+    };
+
+    _video.setAttribute('width', '320');
+    _video.setAttribute('height', '240');
+
+    videoContener.appendChild(_video);
+    return _video;
+  }
+
+  onNegotiationNeeded(event) {
+  }
+
+  onRemoveTrack(event) {
+  }
+
+  onIceConnectionStateChange(event) {
+  }
+
+  onIceGatheringStateChange(event) {
+  }
+
+  onSignalingStateChange(event) {
+  }
+
+  onOffer(offer) {
     if (hasUserMedia()) {
         navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
         navigator.getUserMedia({ 
           video: true, 
           audio: true 
         }, stream => {
-          const video = document.getElementById('selfview');
-          if ('srcObject' in video) {
-            video.srcObject = stream;
-          } else {
-            video.src = URL.createObjectURL(stream);
-          }
-          video.onloadedmetadata = error => {
-            video.play();
-          };
-
-          this.webRTCConnection = new RTCPeerConnection({ 
-            iceServers: [{ 
-              url: 'stun:stun.1.google.com:19302' 
-            }]
-          });
-
-          this.webRTCConnection.onicecandidate = event => {
-            console.log('onicecandidate');
-            if (event.candidate) {
-              this.socket.emit('candidate', {
-                room: params.room,
-                candidate: event.candidate
-              });
-            }
-          };
-
-          this.webRTCConnection.onaddstream = event => {
-            console.log('onaddstream');
-
-            let videoContener = document.getElementById('remoteview');
-            let _video = document.createElement('video');
-            if ('srcObject' in _video) {
-              _video.srcObject = event.stream;
-            } else {
-              _video.src = URL.createObjectURL(event.stream);
-            }
-            _video.onloadedmetadata = error => {
-              console.log('onloadedmetadata');
-              console.log(error);
-              _video.play();
-            };
-
-            _video.setAttribute('width', '320');
-            _video.setAttribute('height', '240');
-
-            videoContener.appendChild(_video);
-            return _video;
-          };
-
-          this.webRTCConnection.addStream(stream);
-
+          this.setLocalStream(stream);
+          this.connection();
+          this.addTracks(stream);
           this.createAnswer(offer);
        }, error => {
           console.log(error);
@@ -264,12 +252,12 @@ class Chat extends Component {
   }
 
   sendMessage(event) {
+    event.preventDefault();
+
     const { match: { params } } = this.props;
     const { name, message } = this.state;
 
     if (!message) return;
-
-    event.preventDefault();
 
     this.socket.emit('message', {
       room: params.room,
