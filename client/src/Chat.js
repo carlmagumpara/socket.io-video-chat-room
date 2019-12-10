@@ -163,7 +163,7 @@ class Chat extends Component {
       }]
     };
 
-    this.webRTCConnection = new RTCPeerConnection(configurations);
+    this.webRTCConnection = new RTCPeerConnection(configuration);
 
     this.webRTCConnection.onicecandidate = event => this.onIceCandidate(event);
     this.webRTCConnection.ontrack = event => this.onTrack(event);
