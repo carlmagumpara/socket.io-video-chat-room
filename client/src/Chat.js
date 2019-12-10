@@ -114,7 +114,6 @@ class Chat extends Component {
     .then(stream => {
       this.setLocalStream(stream);
       this.connection();
-      this.addTracks(stream);
       this.createOffer();
     })
     .catch(e => console.log('getUserMedia() error: ', e));
@@ -123,15 +122,12 @@ class Chat extends Component {
   setLocalStream(stream) {
     console.log('setLocalStream(stream)');
     console.log(stream);
+    this.addTracks(stream);
     this.localStream = stream;
     this.localStream.getVideoTracks()[0].enabled = this.state.video;
     this.localStream.getAudioTracks()[0].enabled = this.state.audio;
     const video = document.getElementById('selfview');
-    if ('srcObject' in video) {
-      video.srcObject = stream;
-    } else {
-      video.src = URL.createObjectURL(stream);
-    }
+    video.srcObject = stream;
     this.setState({
       local_track_id: stream.id
     });
@@ -253,10 +249,6 @@ class Chat extends Component {
         await _video.play();
       };
       streamContainer.appendChild(_video);
-      setTimeout(() => {
-        let video = document.getElementById(event.track.id);
-        video.play();
-      }, 3000);
     } else {
       let _audio = document.createElement('audio');
       _audio.id = event.track.id;
@@ -302,7 +294,6 @@ class Chat extends Component {
     .then(stream => {
       this.setLocalStream(stream);
       this.connection();
-      this.addTracks(stream);
       this.createAnswer(offer);
     })
     .catch(e => console.log('getUserMedia() error: ', e));
