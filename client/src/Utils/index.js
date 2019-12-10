@@ -16,8 +16,3 @@ export const stringingToSlug = string => {
 
   return string;
 };
-
-export const hasUserMedia = () => {
-   navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-   return !!navigator.getUserMedia; 
-};

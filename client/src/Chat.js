@@ -3,9 +3,6 @@ import React, {
 } from 'react';
 import 'webrtc-adapter'
 import io from 'socket.io-client';
-import {
-  hasUserMedia
-} from './Utils'
 
 class Chat extends Component {
 
@@ -13,12 +10,15 @@ class Chat extends Component {
     super(props)
     this.state = {
       local_track_id: null,
+      video: true,
+      audio: true,
       message: '',
       name: 'Anonymous',
       messages: [],
     }
 
     this.socket = null;
+    this.localStream = null;
     this.webRTCConnection = null;
     this.handleLeavePage = this.handleLeavePage.bind(this);
   }
@@ -106,28 +106,26 @@ class Chat extends Component {
   }
 
   setUpWebRTC() {
-    if (hasUserMedia()) {
-        navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-        navigator.getUserMedia({ 
-          video: true, 
-          audio: true 
-        }, stream => {
-          this.setLocalStream(stream);
-          this.connection();
-          this.addTracks(stream);
-          this.createOffer();
-       }, error => {
-          console.log(error);
-          alert('Error. WebRTC is not supported!'); 
-       });
-    } else {
+    navigator.mediaDevices.getUserMedia({ 
+      video: true, 
+      audio: true 
+    }, stream => {
+      this.setLocalStream(stream);
+      this.connection();
+      this.addTracks(stream);
+      this.createOffer();
+   }, error => {
+      console.log(error);
       alert('Error. WebRTC is not supported!'); 
-    }
+   });
   }
 
   setLocalStream(stream) {
     console.log('setLocalStream(stream)');
     console.log(stream);
+    this.localStream = stream;
+    this.localStream.getVideoTracks()[0].enabled = this.state.video;
+    this.localStream.getAudioTracks()[0].enabled = this.state.audio;
     const video = document.getElementById('selfview');
     if ('srcObject' in video) {
       video.srcObject = stream;
@@ -153,11 +151,7 @@ class Chat extends Component {
   connection() {
     console.log('connection()');
 
-    this.webRTCConnection = new RTCPeerConnection({
-      iceServers: [{ 
-        urls: 'stun:stun.1.google.com:19302' 
-      }]
-    });
+    this.webRTCConnection = new RTCPeerConnection(null);
 
     this.webRTCConnection.onicecandidate = event => this.onIceCandidate(event);
     this.webRTCConnection.ontrack = event => this.onTrack(event);
@@ -256,7 +250,6 @@ class Chat extends Component {
       _video.style.width = '320px';
       _video.id = event.track.id;
       _video.setAttribute('autoplay', '');
-      _video.setAttribute('muted', '');
       _video.setAttribute('playsinline', '');
       _video.onloadedmetadata = async error => {
         await _video.play();
@@ -301,23 +294,18 @@ class Chat extends Component {
   }
 
   onOffer(offer) {
-    if (hasUserMedia()) {
-        navigator.getUserMedia = navigator.getUserMedia || navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-        navigator.getUserMedia({ 
-          video: true, 
-          audio: true 
-        }, stream => {
-          this.setLocalStream(stream);
-          this.connection();
-          this.addTracks(stream);
-          this.createAnswer(offer);
-       }, error => {
-          console.log(error);
-          alert('Error. WebRTC is not supported!'); 
-       });
-    } else {
+    navigator.mediaDevices.getUserMedia({ 
+      video: true, 
+      audio: true 
+    }, stream => {
+      this.setLocalStream(stream);
+      this.connection();
+      this.addTracks(stream);
+      this.createAnswer(offer);
+   }, error => {
+      console.log(error);
       alert('Error. WebRTC is not supported!'); 
-    }
+   });
   }
 
   sendMessage(event) {
@@ -368,11 +356,37 @@ class Chat extends Component {
           style={{
             width: 320,
             height: 240
-          }}
-          playsInline 
-          autoPlay 
-          muted>
+          }}>
         </video>
+
+        <button
+          onClick={() => {
+            const video = this.localStream.getVideoTracks()[0].enabled = !this.state.video;
+            this.setState({
+              video: video
+            });
+          }}>
+          Video
+        </button>
+        <button
+          onClick={() => {
+            const audio = this.localStream.getAudioTracks()[0].enabled = !this.state.audio;
+            this.setState({
+              audio: audio
+            });
+          }}>
+          Audio
+        </button>
+        <button
+          onClick={() => {
+            this.socket.emit('left', {
+              room: params.room,
+              trackid: this.state.local_track_id
+            });
+            this.webRTCConnection.close();
+          }}>
+          End Call
+        </button>
         <div id="remoteview">
         </div>
         <form
