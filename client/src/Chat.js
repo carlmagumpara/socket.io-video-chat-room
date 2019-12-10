@@ -232,50 +232,37 @@ class Chat extends Component {
   onTrack(event) {
     console.log('ontrack');
     console.log(event);
-
+    let videoContainer = document.getElementById('remoteview');
+    if (!document.getElementById(event.streams[0].id)) {
+      let _div = document.createElement('div');
+      _div.id = event.streams[0].id;
+      videoContainer.appendChild(_div);
+    }
+    let streamContainer = document.getElementById(event.streams[0].id);
     if (event.track.kind === 'video') {
-      const video = document.getElementById('testremote');
-      video.srcObject = event.streams[0];
-      video.setAttribute('autoplay', '');
-      video.setAttribute('playsinline', '');
-      video.onloadedmetadata = async error => {
+      let _video = document.createElement('video');
+      _video.srcObject = event.streams[0];
+      _video.style.height = '240px';
+      _video.style.width = '320px';
+      _video.id = event.track.id;
+      _video.setAttribute('autoplay', '');
+      _video.setAttribute('playsinline', '');
+      _video.onloadedmetadata = async error => {
         console.log('onloadedmetadata');
         console.log(error);
-        await video.play();
+        await _video.play();
       };
+      streamContainer.appendChild(_video);
+      setTimeout(() => {
+        let video = document.getElementById(event.track.id);
+        video.play();
+      }, 3000);
+    } else {
+      let _audio = document.createElement('audio');
+      _audio.id = event.track.id;
+      _audio.setAttribute('autoplay', '');
+      streamContainer.appendChild(_audio);
     }
-
-    // let videoContainer = document.getElementById('remoteview');
-    // if (!document.getElementById(event.streams[0].id)) {
-    //   let _div = document.createElement('div');
-    //   _div.id = event.streams[0].id;
-    //   videoContainer.appendChild(_div);
-    // }
-    // let streamContainer = document.getElementById(event.streams[0].id);
-    // if (event.track.kind === 'video') {
-    //   let _video = document.createElement('video');
-    //   _video.srcObject = event.streams[0];
-    //   _video.style.height = '240px';
-    //   _video.style.width = '320px';
-    //   _video.id = event.track.id;
-    //   _video.setAttribute('autoplay', '');
-    //   _video.setAttribute('playsinline', '');
-    //   _video.onloadedmetadata = async error => {
-    //     console.log('onloadedmetadata');
-    //     console.log(error);
-    //     await _video.play();
-    //   };
-    //   streamContainer.appendChild(_video);
-    //   setTimeout(() => {
-    //     let video = document.getElementById(event.track.id);
-    //     video.play();
-    //   }, 3000);
-    // } else {
-    //   let _audio = document.createElement('audio');
-    //   _audio.id = event.track.id;
-    //   _audio.setAttribute('autoplay', '');
-    //   streamContainer.appendChild(_audio);
-    // }
   }
 
   onNegotiationNeeded(event) {
@@ -402,15 +389,6 @@ class Chat extends Component {
           }}>
           End Call
         </button>
-        <video 
-          id="testremote"
-          playsInline
-          autoPlay
-          style={{
-            width: 320,
-            height: 240
-          }}>
-        </video>
         <div id="remoteview">
         </div>
         <form
