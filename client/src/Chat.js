@@ -241,20 +241,22 @@ class Chat extends Component {
     let streamContainer = document.getElementById(event.streams[0].id);
     if (event.track.kind === 'video') {
       let _video = document.createElement('video');
-      if ('srcObject' in _video) {
-        _video.srcObject = event.streams[0];
-      } else {
-        _video.src = URL.createObjectURL(event.streams[0]);
-      }
+      _video.srcObject = event.streams[0];
       _video.style.height = '240px';
       _video.style.width = '320px';
       _video.id = event.track.id;
       _video.setAttribute('autoplay', '');
       _video.setAttribute('playsinline', '');
       _video.onloadedmetadata = async error => {
+        console.log('onloadedmetadata');
+        console.log(error);
         await _video.play();
       };
       streamContainer.appendChild(_video);
+      setTimeout(() => {
+        let video = document.getElementById(event.track.id);
+        video.play();
+      }, 3000);
     } else {
       let _audio = document.createElement('audio');
       _audio.id = event.track.id;
