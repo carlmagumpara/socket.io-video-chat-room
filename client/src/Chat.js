@@ -138,8 +138,6 @@ class Chat extends Component {
       local_track_id: stream.id
     });
     video.setAttribute('trackid', stream.id);
-    video.setAttribute('playsinline', 'playsinline');
-    video.setAttribute('webkit-playsinline', 'webkit-playsinline');
     video.onloadedmetadata = error => {
       console.log('onloadedmetadata');
       console.log(error);
@@ -179,6 +177,9 @@ class Chat extends Component {
       this.webRTCConnection.setLocalDescription(offer); 
     }, error => { 
       alert('An error has occurred.'); 
+    }, {
+      offerToReceiveAudio: 1,
+      offerToReceiveVideo: 1
     });
   }
 
@@ -204,7 +205,9 @@ class Chat extends Component {
 
   onLeft(trackid) {
     console.log('onLeft(trackid)');
-    document.getElementById(trackid).remove();
+    if (document.getElementById(trackid)) {
+      document.getElementById(trackid).remove()
+    }
   }
 
   onCandidate(candidate) {
@@ -246,14 +249,14 @@ class Chat extends Component {
       } else {
         _video.src = URL.createObjectURL(event.streams[0]);
       }
-      _video.autoplay = true;
       _video.style.height = '240px';
       _video.style.width = '320px';
       _video.id = event.track.id;
+      _video.setAttribute('playsinline', '');
+      _video.setAttribute('autoplay', '');
       _video.onloadedmetadata = error => {
         _video.play();
       };
-      _video.setAttribute('webkit-playsinline', 'webkit-playsinline');
       streamContainer.appendChild(_video);
     } else {
       let _audio = document.createElement('audio');
