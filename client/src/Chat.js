@@ -154,11 +154,7 @@ class Chat extends Component {
         credential: 'webrtcdemo'
       }, {
         urls: [
-          'stun1.l.google.com:19302',
-          'stun2.l.google.com:19302',
-          'stun3.l.google.com:19302',
-          'stun4.l.google.com:19302',
-          'stun.stunprotocol.org:3478'
+          'stun.l.google.com:19302',
         ]
       }]
     };
