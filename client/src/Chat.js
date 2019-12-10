@@ -138,10 +138,13 @@ class Chat extends Component {
       local_track_id: stream.id
     });
     video.setAttribute('trackid', stream.id);
-    video.onloadedmetadata = error => {
+    video.setAttribute('autoplay', '');
+    video.setAttribute('muted', '');
+    video.setAttribute('playsinline', '');
+    video.onloadedmetadata = async error => {
       console.log('onloadedmetadata');
       console.log(error);
-      video.play();
+      await video.play();
     };
 
     return video;
@@ -252,15 +255,17 @@ class Chat extends Component {
       _video.style.height = '240px';
       _video.style.width = '320px';
       _video.id = event.track.id;
-      _video.setAttribute('playsinline', '');
       _video.setAttribute('autoplay', '');
-      _video.onloadedmetadata = error => {
-        _video.play();
+      _video.setAttribute('muted', '');
+      _video.setAttribute('playsinline', '');
+      _video.onloadedmetadata = async error => {
+        await _video.play();
       };
       streamContainer.appendChild(_video);
     } else {
       let _audio = document.createElement('audio');
       _audio.id = event.track.id;
+      _audio.setAttribute('autoplay', '');
       streamContainer.appendChild(_audio);
     }
     
