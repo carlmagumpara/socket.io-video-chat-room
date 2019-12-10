@@ -138,6 +138,7 @@ class Chat extends Component {
       local_track_id: stream.id
     });
     video.setAttribute('trackid', stream.id);
+    video.setAttribute('webkit-playsinline', 'webkit-playsinline');
     video.onloadedmetadata = error => {
       video.play();
     };
@@ -249,6 +250,7 @@ class Chat extends Component {
       _video.onloadedmetadata = error => {
         _video.play();
       };
+      _video.setAttribute('webkit-playsinline', 'webkit-playsinline');
       streamContainer.appendChild(_video);
     } else {
       let _audio = document.createElement('audio');
