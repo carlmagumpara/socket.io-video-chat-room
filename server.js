@@ -18,18 +18,19 @@ io.on('connection', socket => {
   });
 
   socket.on('candidate', data => {
-    // io.sockets.in(data.room).emit('candidate', data);
     socket.broadcast.to(data.room).emit('candidate', data);
   });
 
   socket.on('offer', data => {
-    // io.sockets.in(data.room).emit('offer', data);
     socket.broadcast.to(data.room).emit('offer', data);
   });
 
   socket.on('answer', data => {
-    // io.sockets.in(data.room).emit('answer', data);
     socket.broadcast.to(data.room).emit('answer', data);
+  });
+
+  socket.on('left', data => {
+    socket.broadcast.to(data.room).emit('left', data);
   });
 
   socket.on('event', event => {

@@ -12,6 +12,7 @@ class Chat extends Component {
   constructor (props) {
     super(props)
     this.state = {
+      local_track_id: null,
       message: '',
       name: 'Anonymous',
       messages: [],
@@ -19,10 +20,26 @@ class Chat extends Component {
 
     this.socket = null;
     this.webRTCConnection = null;
+    this.handleLeavePage = this.handleLeavePage.bind(this);
   }
 
   componentDidMount() {
     this.setSocketEvents();
+    window.addEventListener('beforeunload', this.handleLeavePage);
+  }
+
+  UNSAFE_componentWillUnmount() {
+    window.removeEventListener('beforeunload', this.handleLeavePage);
+  }
+
+  handleLeavePage() {
+    const { match: { params } } = this.props;
+
+    this.socket.emit('left', {
+      room: params.room,
+      trackid: this.state.local_track_id
+    });
+    return true;
   }
 
   setSocketEvents() {
@@ -57,9 +74,7 @@ class Chat extends Component {
     this.socket.on('candidate', data => {
       console.log('candidate');
       console.log(data);
-      setTimeout(() => {
-        this.onCandidate(data.candidate);
-      }, 5000);
+      this.onCandidate(data.candidate);
     });
 
     this.socket.on('offer', data => {
@@ -72,6 +87,12 @@ class Chat extends Component {
       console.log('answer');
       console.log(data);
       this.onAnswer(data.answer);
+    });
+
+    this.socket.on('left', data => {
+      console.log('left');
+      console.log(data);
+      this.onLeft(data.trackid);
     });
 
     this.socket.on('event', data => {
@@ -113,7 +134,10 @@ class Chat extends Component {
     } else {
       video.src = URL.createObjectURL(stream);
     }
-    // video.id = stream.id;
+    this.setState({
+      local_track_id: stream.id
+    });
+    video.setAttribute('trackid', stream.id);
     video.onloadedmetadata = error => {
       video.play();
     };
@@ -174,6 +198,11 @@ class Chat extends Component {
     this.webRTCConnection.setRemoteDescription(new RTCSessionDescription(answer)); 
   }
 
+  onLeft(trackid) {
+    console.log('onLeft(trackid)');
+    document.getElementById(trackid).remove();
+  }
+
   onCandidate(candidate) {
     this.webRTCConnection.addIceCandidate(new RTCIceCandidate(candidate));
   }
@@ -224,7 +253,6 @@ class Chat extends Component {
     } else {
       let _audio = document.createElement('audio');
       _audio.id = event.track.id;
-
       streamContainer.appendChild(_audio);
     }
     
@@ -246,7 +274,6 @@ class Chat extends Component {
     if (this.webRTCConnection.iceConnectionState === "failed" ||
         this.webRTCConnection.iceConnectionState === "disconnected" ||
         this.webRTCConnection.iceConnectionState === "closed") {
-        console.log(event.target);
     }
   }
 
@@ -324,14 +351,15 @@ class Chat extends Component {
       <div>
         <h1>You are on {params.room} channel</h1>
         <video 
-          id="selfview" 
+          id="selfview"
           style={{
             width: 320,
             height: 240
           }}
           autoPlay>
         </video>
-        <div id="remoteview" />
+        <div id="remoteview">
+        </div>
         <form
           onSubmit={event => {this.sendMessage(event)}}>
           <input 
