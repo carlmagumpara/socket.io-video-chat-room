@@ -147,7 +147,23 @@ class Chat extends Component {
   connection() {
     console.log('connection()');
 
-    this.webRTCConnection = new RTCPeerConnection(null);
+    const configuration = {
+      iceServers: [{
+        urls: 'stun:stun.services.mozilla.com',
+        username: 'louis@mozilla.com',
+        credential: 'webrtcdemo'
+      }, {
+        urls: [
+          'stun1.l.google.com:19302',
+          'stun2.l.google.com:19302',
+          'stun3.l.google.com:19302',
+          'stun4.l.google.com:19302',
+          'stun.stunprotocol.org:3478'
+        ]
+      }]
+    };
+
+    this.webRTCConnection = new RTCPeerConnection(configurations);
 
     this.webRTCConnection.onicecandidate = event => this.onIceCandidate(event);
     this.webRTCConnection.ontrack = event => this.onTrack(event);
