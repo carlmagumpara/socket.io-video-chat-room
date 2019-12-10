@@ -138,8 +138,11 @@ class Chat extends Component {
       local_track_id: stream.id
     });
     video.setAttribute('trackid', stream.id);
+    video.setAttribute('playsinline', 'playsinline');
     video.setAttribute('webkit-playsinline', 'webkit-playsinline');
     video.onloadedmetadata = error => {
+      console.log('onloadedmetadata');
+      console.log(error);
       video.play();
     };
 
@@ -358,7 +361,9 @@ class Chat extends Component {
             width: 320,
             height: 240
           }}
-          autoPlay>
+          playsInline 
+          autoPlay 
+          muted>
         </video>
         <div id="remoteview">
         </div>
