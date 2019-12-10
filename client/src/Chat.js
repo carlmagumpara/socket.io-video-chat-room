@@ -114,6 +114,7 @@ class Chat extends Component {
     .then(stream => {
       this.setLocalStream(stream);
       this.connection();
+      this.addTracks(stream);
       this.createOffer();
     })
     .catch(e => console.log('getUserMedia() error: ', e));
@@ -122,7 +123,6 @@ class Chat extends Component {
   setLocalStream(stream) {
     console.log('setLocalStream(stream)');
     console.log(stream);
-    this.addTracks(stream);
     this.localStream = stream;
     this.localStream.getVideoTracks()[0].enabled = this.state.video;
     this.localStream.getAudioTracks()[0].enabled = this.state.audio;
@@ -294,6 +294,7 @@ class Chat extends Component {
     .then(stream => {
       this.setLocalStream(stream);
       this.connection();
+      this.addTracks(stream);
       this.createAnswer(offer);
     })
     .catch(e => console.log('getUserMedia() error: ', e));
