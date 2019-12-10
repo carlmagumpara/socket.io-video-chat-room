@@ -106,18 +106,18 @@ class Chat extends Component {
   }
 
   setUpWebRTC() {
-    navigator.mediaDevices.getUserMedia({ 
-      video: true, 
-      audio: true 
-    }, stream => {
+    navigator.mediaDevices
+    .getUserMedia({
+      audio: true,
+      video: true
+    })
+    .then(stream => {
       this.setLocalStream(stream);
       this.connection();
       this.addTracks(stream);
       this.createOffer();
-   }, error => {
-      console.log(error);
-      alert('Error. WebRTC is not supported!'); 
-   });
+    })
+    .catch(e => console.log('getUserMedia() error: ', e));
   }
 
   setLocalStream(stream) {
@@ -294,18 +294,18 @@ class Chat extends Component {
   }
 
   onOffer(offer) {
-    navigator.mediaDevices.getUserMedia({ 
-      video: true, 
-      audio: true 
-    }, stream => {
+    navigator.mediaDevices
+    .getUserMedia({
+      audio: true,
+      video: true
+    })
+    .then(stream => {
       this.setLocalStream(stream);
       this.connection();
       this.addTracks(stream);
       this.createAnswer(offer);
-   }, error => {
-      console.log(error);
-      alert('Error. WebRTC is not supported!'); 
-   });
+    })
+    .catch(e => console.log('getUserMedia() error: ', e));
   }
 
   sendMessage(event) {
