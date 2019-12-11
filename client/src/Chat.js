@@ -4,12 +4,18 @@ import React, {
 import 'webrtc-adapter'
 import io from 'socket.io-client';
 
+const peerConfig = {
+  'iceServers': [
+    {'urls': 'stun:stun.services.mozilla.com'},
+    {'urls': 'stun:stun.l.google.com:19302'},
+  ]
+};
+
 class Chat extends Component {
 
   constructor (props) {
     super(props)
     this.state = {
-      local_track_id: null,
       video: true,
       audio: true,
       message: '',
@@ -18,13 +24,14 @@ class Chat extends Component {
     }
 
     this.socket = null;
+    this.socketId = null;
     this.localStream = null;
-    this.webRTCConnection = null;
+    this.webRTCConnection = [];
     this.handleLeavePage = this.handleLeavePage.bind(this);
   }
 
   componentDidMount() {
-    this.setSocketEvents();
+    this.setMediaDevices();
     window.addEventListener('beforeunload', this.handleLeavePage);
   }
 
@@ -33,13 +40,21 @@ class Chat extends Component {
   }
 
   handleLeavePage() {
-    const { match: { params } } = this.props;
-
-    this.socket.emit('left', {
-      room: params.room,
-      trackid: this.state.local_track_id
-    });
     return true;
+  }
+
+  setMediaDevices() {
+    navigator.mediaDevices
+    .getUserMedia({
+      audio: true,
+      video: true
+    })
+    .then(stream => {
+      console.log(stream);
+      this.setLocalStream(stream);
+      this.setSocketEvents();
+    })
+    .catch(e => console.log('getUserMedia() error: ', e));
   }
 
   setSocketEvents() {
@@ -57,67 +72,86 @@ class Chat extends Component {
 
     this.socket.on('connect', () => {
       console.log('connect on room '+params.room);
+      this.socketId = this.socket.id;
+
       this.socket.emit('join-room', params.room);
-      this.setUpWebRTC();
-    });
 
-    this.socket.on('message', data => {
-      console.log(data);
-      this.setState({
-        messages: [
-          ...this.state.messages, 
-          data
-        ]
+      this.socket.on('joined', data => {
+        console.log('joined');
+        console.log(data);
+        this.setUpWebRTC(data);
       });
-    });
 
-    this.socket.on('candidate', data => {
-      console.log('candidate');
-      console.log(data);
-      this.onCandidate(data.candidate);
-    });
+      this.socket.on('message', data => {
+        console.log(data);
+        this.setState({
+          messages: [
+            ...this.state.messages, 
+            data
+          ]
+        });
+      });
 
-    this.socket.on('offer', data => {
-      console.log('offer');
-      console.log(data);
-      this.onOffer(data.offer);
-    });
+      this.socket.on('candidate', data => {
+        console.log('candidate');
+        console.log(data);
+        this.onCandidate(data);
+      });
 
-    this.socket.on('answer', data => {
-      console.log('answer');
-      console.log(data);
-      this.onAnswer(data.answer);
-    });
+      this.socket.on('offer', data => {
+        console.log('offer');
+        console.log(data);
+        this.onOffer(data);
+      });
 
-    this.socket.on('left', data => {
-      console.log('left');
-      console.log(data);
-      this.onLeft(data.trackid);
-    });
+      this.socket.on('answer', data => {
+        console.log('answer');
+        console.log(data);
+        this.onAnswer(data);
+      });
 
-    this.socket.on('event', data => {
-      console.log('event');
-      console.log(data);
-    });
+      this.socket.on('left', data => {
+        console.log('left');
+        console.log(data);
+        this.onLeft(data);
+      });
 
-    this.socket.on('disconnect', () => {
-      console.log('disconnect');
+      this.socket.on('event', data => {
+        console.log('event');
+        console.log(data);
+      });
+
+      this.socket.on('disconnect', () => {
+        console.log('disconnect');
+      });
+
+
     });
   }
 
-  setUpWebRTC() {
-    navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true
-    })
-    .then(stream => {
-      this.setLocalStream(stream);
-      this.connection();
-      this.addTracks(stream);
-      this.createOffer();
-    })
-    .catch(e => console.log('getUserMedia() error: ', e));
+  setUpWebRTC(data) {
+    console.log('setUpWebRTC()');
+
+    data.clients.map(client => {
+      if (!this.webRTCConnection[client]) {
+        console.log('triggered');
+        this.webRTCConnection[client] = new RTCPeerConnection(peerConfig);
+        this.webRTCConnection[client].onicecandidate = event => this.onIceCandidate(event);
+        this.webRTCConnection[client].ontrack = event => this.onTrack(event, client);
+        this.webRTCConnection[client].onnegotiationneeded = event => this.onNegotiationNeeded(event);
+        this.webRTCConnection[client].onremovetrack = event => this.onRemoveTrack(event);
+        this.webRTCConnection[client].oniceconnectionstatechange = event => this.onIceConnectionStateChange(event);
+        this.webRTCConnection[client].onicegatheringstatechange = event => this.onIceGatheringStateChange(event);
+        this.webRTCConnection[client].onsignalingstatechange = event => this.onSignalingStateChange(event);
+        this.localStream.getTracks().forEach(track => {
+          this.webRTCConnection[client].addTrack(track, this.localStream);
+        });
+      }
+    });
+
+    if(data.clients_count >= 2) {
+      this.createOffer(data.socket_id);
+    }
   }
 
   setLocalStream(stream) {
@@ -128,10 +162,7 @@ class Chat extends Component {
     this.localStream.getAudioTracks()[0].enabled = this.state.audio;
     const video = document.getElementById('selfview');
     video.srcObject = stream;
-    this.setState({
-      local_track_id: stream.id
-    });
-    video.setAttribute('trackid', stream.id);
+    video.setAttribute('trackid', this.socketId);
     video.setAttribute('autoplay', '');
     video.setAttribute('muted', '');
     video.setAttribute('playsinline', '');
@@ -144,79 +175,57 @@ class Chat extends Component {
     return video;
   }
 
-  connection() {
-    console.log('connection()');
 
-    const configuration = {
-      iceServers: [{
-        urls: 'stun:stun.services.mozilla.com',
-        username: 'louis@mozilla.com',
-        credential: 'webrtcdemo'
-      }, {
-        urls: [
-          'stun:stun.l.google.com:19302',
-        ]
-      }]
-    };
-
-    this.webRTCConnection = new RTCPeerConnection(configuration);
-
-    this.webRTCConnection.onicecandidate = event => this.onIceCandidate(event);
-    this.webRTCConnection.ontrack = event => this.onTrack(event);
-    this.webRTCConnection.onnegotiationneeded = event => this.onNegotiationNeeded(event);
-    this.webRTCConnection.onremovetrack = event => this.onRemoveTrack(event);
-    this.webRTCConnection.oniceconnectionstatechange = event => this.onIceConnectionStateChange(event);
-    this.webRTCConnection.onicegatheringstatechange = event => this.onIceGatheringStateChange(event);
-    this.webRTCConnection.onsignalingstatechange = event => this.onSignalingStateChange(event);
-  }
-
-  createOffer() {
+  createOffer(socket_id) {
     const { match: { params } } = this.props;
   
     // Create an Offer
-    this.webRTCConnection.createOffer(offer => { 
+    this.webRTCConnection[socket_id].createOffer(offer => { 
       this.socket.emit('offer', {
         room: params.room,
+        socket_id: this.socketId,
         offer: offer
       });
-      this.webRTCConnection.setLocalDescription(offer); 
+      this.webRTCConnection[socket_id].setLocalDescription(offer); 
     }, error => { 
-      alert('An error has occurred.'); 
+      console.log('An error has occurred.', error);
     }, {
       offerToReceiveAudio: 1,
       offerToReceiveVideo: 1
     });
   }
 
-  createAnswer(offer) {
+  createAnswer(data) {
     const { match: { params } } = this.props;
   
     // Create an Answer
-    this.webRTCConnection.setRemoteDescription(new RTCSessionDescription(offer));
-    this.webRTCConnection.createAnswer(answer => {
+    this.webRTCConnection[data.socket_id].setRemoteDescription(new RTCSessionDescription(data.offer));
+    this.webRTCConnection[data.socket_id].createAnswer(answer => {
       this.socket.emit('answer', {
         room: params.room,
+        socket_id: this.socketId,
         answer: answer
       });
-      this.webRTCConnection.setLocalDescription(answer);
+      this.webRTCConnection[data.socket_id].setLocalDescription(answer);
     }, error => { 
-      alert('An error has occurred.'); 
+      console.log('An error has occurred.', error);
     });
   }
 
-  onAnswer(answer) { 
-    this.webRTCConnection.setRemoteDescription(new RTCSessionDescription(answer)); 
+  onAnswer(data) {
+    this.webRTCConnection[data.socket_id].setRemoteDescription(new RTCSessionDescription(data.answer));
   }
 
-  onLeft(trackid) {
-    console.log('onLeft(trackid)');
-    if (document.getElementById(trackid)) {
-      document.getElementById(trackid).remove()
+  onLeft(socket_id) {
+    console.log('onLeft(socket_id)');
+    console.log(socket_id);
+    if (document.getElementById(socket_id)) {
+      document.getElementById(socket_id).remove();
     }
   }
 
-  onCandidate(candidate) {
-    this.webRTCConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  onCandidate(data) {
+    this.webRTCConnection[data.socket_id].addIceCandidate(new RTCIceCandidate(data.candidate));
   }
 
   onIceCandidate(event) {
@@ -226,27 +235,22 @@ class Chat extends Component {
     if (event.candidate) {
       this.socket.emit('candidate', {
         room: params.room,
+        socket_id: this.socketId,
         candidate: event.candidate
       });
     }
   }
 
-  addTracks(stream) {
-    stream.getTracks().forEach(track => {
-      this.webRTCConnection.addTrack(track, stream);
-    });
-  }
-
-  onTrack(event) {
+  onTrack(event, client) {
     console.log('ontrack');
     console.log(event);
     let videoContainer = document.getElementById('remoteview');
-    if (!document.getElementById(event.streams[0].id)) {
+    if (!document.getElementById(client)) {
       let _div = document.createElement('div');
-      _div.id = event.streams[0].id;
+      _div.id = client;
       videoContainer.appendChild(_div);
     }
-    let streamContainer = document.getElementById(event.streams[0].id);
+    let streamContainer = document.getElementById(client);
     if (event.track.kind === 'video') {
       let _video = document.createElement('video');
       _video.srcObject = event.streams[0];
@@ -281,10 +285,7 @@ class Chat extends Component {
 
   onIceConnectionStateChange(event) {
     console.log('onIceConnectionStateChange(event)');
-    if (this.webRTCConnection.iceConnectionState === "failed" ||
-        this.webRTCConnection.iceConnectionState === "disconnected" ||
-        this.webRTCConnection.iceConnectionState === "closed") {
-    }
+    console.log(event);
   }
 
   onIceGatheringStateChange(event) {
@@ -297,19 +298,8 @@ class Chat extends Component {
     console.log(event);
   }
 
-  onOffer(offer) {
-    navigator.mediaDevices
-    .getUserMedia({
-      audio: true,
-      video: true
-    })
-    .then(stream => {
-      this.setLocalStream(stream);
-      this.connection();
-      this.addTracks(stream);
-      this.createAnswer(offer);
-    })
-    .catch(e => console.log('getUserMedia() error: ', e));
+  onOffer(data) {
+    this.createAnswer(data);
   }
 
   sendMessage(event) {
@@ -385,11 +375,7 @@ class Chat extends Component {
         </button>
         <button
           onClick={() => {
-            this.socket.emit('left', {
-              room: params.room,
-              trackid: this.state.local_track_id
-            });
-            this.webRTCConnection.close();
+            this.webRTCConnection[this.socketId].close();
           }}>
           End Call
         </button>
