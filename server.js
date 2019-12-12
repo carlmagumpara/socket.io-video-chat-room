@@ -11,6 +11,12 @@ io.on('connection', socket => {
   socket.on('join-room', room => {
     console.log('someone is connected on room '+room);
     socket.join(room);
+    let clients = [...new Set(Object.keys(io.sockets.adapter.rooms[room].sockets))];
+    io.sockets.in(room).emit('joined', { 
+      socket_id: socket.id, 
+      clients, 
+      clients_count: clients.length  
+    });
   });
 
   socket.on('message', data => {
@@ -29,16 +35,15 @@ io.on('connection', socket => {
     socket.broadcast.to(data.room).emit('answer', data);
   });
 
-  socket.on('left', data => {
-    socket.broadcast.to(data.room).emit('left', data);
-  });
-
   socket.on('event', event => {
     console.log('Received message from socket!', event);
   });
 
   socket.on('disconnect', () => {
     console.log('Server has disconnected');
+    let rooms = io.sockets.adapter.rooms;
+    console.log(rooms);
+    io.sockets.emit('left', socket.id);
   });
 });
 
