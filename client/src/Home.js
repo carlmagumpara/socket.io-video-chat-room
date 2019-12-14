@@ -2,6 +2,12 @@ import React, {
   Component 
 } from 'react';
 import {
+  Row,
+  Col,
+  Form,
+  Button
+} from 'react-bootstrap';
+import {
   stringingToSlug
 } from './Utils'
 
@@ -43,21 +49,27 @@ class Home extends Component {
 
   render() {
     return (
-      <div>
-        <form
-          onSubmit={event => {this.joinRoom(event)}}>
-          <label>Room Name</label>
-          <input 
-            type="text"
-            name="room"
-            value={this.state.room}
-            onChange={event => this.handleChange(event)}
-          />
-          <button
-            type="submit">
-            Join
-          </button>
-        </form>
+      <div className="d-flex justify-content-center align-items-center vh-100 vw-100">
+        <div className="text-center" style={{ width: 350 }}>
+          <h1 className="mb-3">Zane RTC</h1>
+          <Form onSubmit={event => {this.joinRoom(event)}}>
+            <Form.Group>
+              <Form.Control
+                type="text"
+                name="room"
+                value={this.state.room}
+                placeholder="Room Name"
+                onChange={event => this.handleChange(event)}
+              />
+            </Form.Group>
+            <Button className="m-2" variant="primary" type="submit">
+              Join Room
+            </Button>
+            <Button className="m-2" variant="danger" type="submit">
+              Go Live
+            </Button>
+          </Form>
+        </div>
       </div>
     );
   }
