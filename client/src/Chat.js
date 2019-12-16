@@ -3,13 +3,39 @@ import React, {
 } from 'react';
 import 'webrtc-adapter'
 import io from 'socket.io-client';
+import {
+  Row,
+  Col,
+  Form,
+  Button,
+  InputGroup,
+  FormControl,
+  Nav,
+  Navbar,
+  NavDropdown
+} from 'react-bootstrap';
+import { 
+  FaVideo,
+  FaMicrophone,
+  FaPhone
+} from 'react-icons/fa';
+
+// if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
+//     // dev code
+// } else {
+//     // production code
+// }
 
 const peerConfig = {
-  'iceServers': [
-    {'urls': 'stun:stun.services.mozilla.com'},
-    {'urls': 'stun:stun.l.google.com:19302'},
-  ]
+  'iceServers': []
 };
+
+// const peerConfig = {
+//   'iceServers': [
+//     {'urls': 'stun:stun.services.mozilla.com'},
+//     {'urls': 'stun:stun.l.google.com:19302'},
+//   ]
+// };
 
 class Chat extends Component {
 
@@ -21,6 +47,7 @@ class Chat extends Component {
       message: '',
       name: 'Anonymous',
       messages: [],
+      messages_visibility: true
     }
 
     this.socket = null;
@@ -92,22 +119,20 @@ class Chat extends Component {
         });
       });
 
-      this.socket.on('candidate', data => {
-        console.log('candidate');
-        console.log(data);
-        this.onCandidate(data);
-      });
-
-      this.socket.on('offer', data => {
-        console.log('offer');
-        console.log(data);
-        this.onOffer(data);
-      });
-
-      this.socket.on('answer', data => {
-        console.log('answer');
-        console.log(data);
-        this.onAnswer(data);
+      this.socket.on('signal', data => {
+        switch(data.type) {
+          case 'candidate':
+            this.onCandidate(data);
+            break;
+          case 'offer':
+            this.onOffer(data);
+            break;
+          case 'answer':
+            this.onAnswer(data);
+            break;
+          default:
+            // code block
+        }
       });
 
       this.socket.on('left', data => {
@@ -116,16 +141,9 @@ class Chat extends Component {
         this.onLeft(data);
       });
 
-      this.socket.on('event', data => {
-        console.log('event');
-        console.log(data);
-      });
-
       this.socket.on('disconnect', () => {
         console.log('disconnect');
       });
-
-
     });
   }
 
@@ -181,8 +199,9 @@ class Chat extends Component {
   
     // Create an Offer
     this.webRTCConnection[socket_id].createOffer(offer => { 
-      this.socket.emit('offer', {
+      this.socket.emit('signal', {
         room: params.room,
+        type: 'offer',
         socket_id: this.socketId,
         offer: offer
       });
@@ -201,8 +220,9 @@ class Chat extends Component {
     // Create an Answer
     this.webRTCConnection[data.socket_id].setRemoteDescription(new RTCSessionDescription(data.offer));
     this.webRTCConnection[data.socket_id].createAnswer(answer => {
-      this.socket.emit('answer', {
+      this.socket.emit('signal', {
         room: params.room,
+        type: 'answer',
         socket_id: this.socketId,
         answer: answer
       });
@@ -233,8 +253,9 @@ class Chat extends Component {
 
     console.log('onicecandidate');
     if (event.candidate) {
-      this.socket.emit('candidate', {
+      this.socket.emit('signal', {
         room: params.room,
+        type: 'candidate',
         socket_id: this.socketId,
         candidate: event.candidate
       });
@@ -341,67 +362,92 @@ class Chat extends Component {
 
   render() {
     const { match: { params } } = this.props;
-
+    const { messages_visibility } = this.state;
     return (
-      <div>
-        <h1>You are on {params.room} channel</h1>
-        <video 
-          id="selfview"
-          playsInline
-          autoPlay
-          muted
-          style={{
-            width: 320,
-            height: 240
-          }}>
-        </video>
-        <button
-          onClick={() => {
-            const video = this.localStream.getVideoTracks()[0].enabled = !this.state.video;
-            this.setState({
-              video: video
-            });
-          }}>
-          Video
-        </button>
-        <button
-          onClick={() => {
-            const audio = this.localStream.getAudioTracks()[0].enabled = !this.state.audio;
-            this.setState({
-              audio: audio
-            });
-          }}>
-          Audio
-        </button>
-        <button
-          onClick={() => {
-            this.webRTCConnection[this.socketId].close();
-          }}>
-          End Call
-        </button>
-        <div id="remoteview">
+      <div id="wrapper" className={messages_visibility ? 'show' : ''}>
+
+        <Navbar bg="light" expand="lg" fixed="top">
+          <Navbar.Brand href="#home">Zane RTC</Navbar.Brand>
+        </Navbar>
+
+        <div id="messages">
+          <div>
+            {this.state.messages.map(data => {
+              return (
+                <div key={Math.random().toString(36).substring(7)}>
+                  {data.name} : {data.message}
+                </div>
+              )
+            })}
+          </div>
+          <div id="input">
+            <form
+              onSubmit={event => {this.sendMessage(event)}}>
+              <InputGroup>
+                <FormControl
+                  type="text"
+                  name="message"
+                  value={this.state.message}
+                  onChange={event => this.handleChange(event)}
+                />
+                <InputGroup.Prepend>
+                  <InputGroup.Text>
+                    @
+
+                  </InputGroup.Text>
+                </InputGroup.Prepend>
+              </InputGroup>
+            </form>
+          </div>
         </div>
-        <form
-          onSubmit={event => {this.sendMessage(event)}}>
-          <input 
-            type="text"
-            name="message"
-            value={this.state.message}
-            onChange={event => this.handleChange(event)}
-          />
+        <div id="videos-container">
           <button
-            type="submit">
-            Send
+            onClick={() => {
+              this.setState(prevState => ({
+                messages_visibility: !prevState.messages_visibility
+              }));
+            }}>
+            Messages
           </button>
-        </form>
-        <div>
-          {this.state.messages.map(data => {
-            return (
-              <div key={Math.random().toString(36).substring(7)}>
-                {data.name} : {data.message}
-              </div>
-            )
-          })}
+          <div className="local-video">
+            <video 
+              id="selfview"
+              playsInline
+              autoPlay
+              muted
+            />
+          </div>
+          <div id="remoteview">
+          </div>
+          <div id="action-buttons" className="d-flex justify-content-center align-items-center">
+            <Button 
+              variant="light"
+              onClick={() => {
+                const video = this.localStream.getVideoTracks()[0].enabled = !this.state.video;
+                this.setState({
+                  video: video
+                });
+              }}>
+              <FaVideo />
+            </Button>
+            <Button 
+              variant="light"
+              onClick={() => {
+                const audio = this.localStream.getAudioTracks()[0].enabled = !this.state.audio;
+                this.setState({
+                  audio: audio
+                });
+              }}>
+              <FaMicrophone />
+            </Button>
+            <Button 
+              variant="danger"
+              onClick={() => {
+
+              }}>
+              <FaPhone />
+            </Button>
+          </div>
         </div>
       </div>
     );

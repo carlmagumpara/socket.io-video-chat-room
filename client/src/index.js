@@ -1,10 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { 
+  ToastProvider 
+} from 'react-toast-notifications';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
+import {
+  setToastNotification
+} from './Utils';
 import App from './App';
 // import * as serviceWorker from './serviceWorker';
 
-ReactDOM.render(<App />, document.getElementById('root'));
+function AppMain() {
+	return (
+		<ToastProvider 
+			ref={ref => setToastNotification(ref)}>
+			<App />
+		</ToastProvider>
+	)
+}
+
+ReactDOM.render(<AppMain />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

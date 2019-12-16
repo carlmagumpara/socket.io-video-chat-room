@@ -1,3 +1,13 @@
+let toast_notification;
+
+export const setToastNotification = toastNotificationRef => toast_notification = toastNotificationRef;
+
+export const toastNotification = (type, message) => {
+  return toast_notification.add(message, { 
+    appearance: type 
+  });
+};
+
 export const stringingToSlug = string => {
   string = string.replace(/^\s+|\s+$/g, ''); // trim
   string = string.toLowerCase();

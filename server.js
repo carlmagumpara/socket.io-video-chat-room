@@ -23,20 +23,8 @@ io.on('connection', socket => {
     io.sockets.in(data.room).emit('message', data);
   });
 
-  socket.on('candidate', data => {
-    socket.broadcast.to(data.room).emit('candidate', data);
-  });
-
-  socket.on('offer', data => {
-    socket.broadcast.to(data.room).emit('offer', data);
-  });
-
-  socket.on('answer', data => {
-    socket.broadcast.to(data.room).emit('answer', data);
-  });
-
-  socket.on('event', event => {
-    console.log('Received message from socket!', event);
+  socket.on('signal', data => {
+    socket.broadcast.to(data.room).emit('signal', data);
   });
 
   socket.on('disconnect', () => {
